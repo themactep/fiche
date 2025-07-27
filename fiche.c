@@ -26,28 +26,27 @@ $ cat fiche.c | nc localhost 9999
 -------------------------------------------------------------------------------
 */
 
-#include "fiche.h"
-
-#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <netdb.h>
+#include <pthread.h>
+#include <pwd.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <pwd.h>
 #include <time.h>
 #include <unistd.h>
-#include <pthread.h>
 
-#include <fcntl.h>
-#include <netdb.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/in.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
+#include "fiche.h"
 
 /******************************************************************************
  * Various declarations
@@ -193,28 +192,17 @@ void fiche_init(Fiche_Settings *settings) {
     // or to NULL in case of pointers
 
     struct Fiche_Settings def = {
-        // domain
-        "example.com",
-        // output dir
-        "code",
-	// listen_addr
-	"0.0.0.0",
-        // port
-        9999,
-        // slug length
-        4,
-        // https
-        false,
-        // buffer length
-        32768,
-        // user name
-        NULL,
-        // path to log file
-        NULL,
-        // path to banlist
-        NULL,
-        // path to whitelist
-        NULL
+        "localhost",   // domain name
+        "code",        // output directory
+        "0.0.0.0",     // listen address
+        9999,          // port
+        4,             // slug length
+        false,         // https
+        32768,         // buffer length
+        NULL,          // user name
+        NULL,          // log file path
+        NULL,          // path to banlist
+        NULL           // path to whitelist
     };
 
     // Copy default settings to provided instance
@@ -239,15 +227,15 @@ int fiche_run(Fiche_Settings settings) {
     }
 
     // Check if output directory is writable
-    // - First we try to create it
     {
+        // Try to create output directory
         mkdir(
             settings.output_dir_path,
             S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH | S_IXGRP
         );
-        // - Then we check if we can write there
+        // Check if we can write there
         if ( access(settings.output_dir_path, W_OK) != 0 ) {
-            print_error("Output directory not writable!");
+            print_error("Output directory not writable: %s!", settings.output_dir_path);
             return -1;
         }
     }
@@ -261,7 +249,7 @@ int fiche_run(Fiche_Settings settings) {
 
         // Then check if it's accessible
         if ( access(settings.log_file_path, W_OK) != 0 ) {
-            print_error("Log file not writable!");
+            print_error("Log file not writable: %s!", settings.log_file_path);
             return -1;
         }
 
@@ -301,7 +289,6 @@ static void print_error(const char *format, ...) {
     va_end(args);
 }
 
-
 static void print_status(const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -317,7 +304,6 @@ static void print_status(const char *format, ...) {
 static void print_separator() {
     printf("============================================================\n");
 }
-
 
 static void log_entry(const Fiche_Settings *s, const char *ip,
     const char *hostname, const char *slug)
