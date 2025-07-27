@@ -245,6 +245,10 @@ int fiche_run(Fiche_Settings settings) {
 
         // Create log file if it doesn't exist
         FILE *f = fopen(settings.log_file_path, "a+");
+        if (!f) {
+            print_error("Was not able to create log file %s!", settings.log_file_path);
+            return -1;
+        }
         fclose(f);
 
         // Then check if it's accessible
