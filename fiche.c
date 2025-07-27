@@ -233,6 +233,11 @@ int fiche_run(Fiche_Settings settings) {
             settings.output_dir_path,
             S_IRWXU | S_IRGRP | S_IROTH | S_IXOTH | S_IXGRP
         );
+        if ( errno != EEXIST ) {
+            print_error("Was not able to create output directory: %s!", settings.output_dir_path);
+            return -1;
+        }
+
         // Check if we can write there
         if ( access(settings.output_dir_path, W_OK) != 0 ) {
             print_error("Output directory not writable: %s!", settings.output_dir_path);
